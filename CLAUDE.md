@@ -1,7 +1,7 @@
 # Gclimb — Claude Code Guide
 
 ## What This Repo Is
-A SmartThings + Healthcare IoT hub repository, co-located with a personal knowledge management vault (Obsidian/PARA). The git root contains both: the SmartThings codebase and the second-brain vault under `second-brain/`.
+A monorepo containing two things: the SmartThings + Healthcare IoT codebase, and a personal knowledge management vault (Obsidian/PARA) under `second-brain/`. Both are tracked here intentionally — `albertonkat/Second-brain` on GitHub is archived and no longer used. Single source of truth is this repo.
 
 ## Directory Structure
 

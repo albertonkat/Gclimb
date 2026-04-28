@@ -1,0 +1,9 @@
+# Obsidian local state — not shared across machines
+second-brain/.obsidian/workspace.json
+second-brain/.obsidian/workspace-mobile.json
+second-brain/.obsidian/.trash/
+second-brain/.trash/
+
+# Obsidian plugin compiled output (if plugins are ever installed)
+second-brain/.obsidian/plugins/*/main.js
+second-brain/.obsidian/plugins/*/styles.css
