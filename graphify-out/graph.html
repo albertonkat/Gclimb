@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>graphify - graphify-out/graph.html</title>
+<script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0f0f1a; color: #e0e0e0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; display: flex; height: 100vh; overflow: hidden; }
+  #graph { flex: 1; }
+  #sidebar { width: 280px; background: #1a1a2e; border-left: 1px solid #2a2a4e; display: flex; flex-direction: column; overflow: hidden; }
+  #search-wrap { padding: 12px; border-bottom: 1px solid #2a2a4e; }
+  #search { width: 100%; background: #0f0f1a; border: 1px solid #3a3a5e; color: #e0e0e0; padding: 7px 10px; border-radius: 6px; font-size: 13px; outline: none; }
+  #search:focus { border-color: #4E79A7; }
+  #search-results { max-height: 140px; overflow-y: auto; padding: 4px 12px; border-bottom: 1px solid #2a2a4e; display: none; }
+  .search-item { padding: 4px 6px; cursor: pointer; border-radius: 4px; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .search-item:hover { background: #2a2a4e; }
+  #info-panel { padding: 14px; border-bottom: 1px solid #2a2a4e; min-height: 140px; }
+  #info-panel h3 { font-size: 13px; color: #aaa; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+  #info-content { font-size: 13px; color: #ccc; line-height: 1.6; }
+  #info-content .field { margin-bottom: 5px; }
+  #info-content .field b { color: #e0e0e0; }
+  #info-content .empty { color: #555; font-style: italic; }
+  .neighbor-link { display: block; padding: 2px 6px; margin: 2px 0; border-radius: 3px; cursor: pointer; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-left: 3px solid #333; }
+  .neighbor-link:hover { background: #2a2a4e; }
+  #neighbors-list { max-height: 160px; overflow-y: auto; margin-top: 4px; }
+  #legend-wrap { flex: 1; overflow-y: auto; padding: 12px; }
+  #legend-wrap h3 { font-size: 13px; color: #aaa; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .legend-item { display: flex; align-items: center; gap: 8px; padding: 4px 0; cursor: pointer; border-radius: 4px; font-size: 12px; }
+  .legend-item:hover { background: #2a2a4e; padding-left: 4px; }
+  .legend-item.dimmed { opacity: 0.35; }
+  .legend-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+  .legend-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .legend-count { color: #666; font-size: 11px; }
+  #stats { padding: 10px 14px; border-top: 1px solid #2a2a4e; font-size: 11px; color: #555; }
+  #legend-controls { display: flex; gap: 6px; margin-bottom: 8px; }
+  #legend-controls button { flex: 1; background: #0f0f1a; border: 1px solid #3a3a5e; color: #aaa; padding: 4px 0; border-radius: 4px; font-size: 11px; cursor: pointer; }
+  #legend-controls button:hover { border-color: #4E79A7; color: #e0e0e0; }
+</style>
+</head>
+<body>
+<div id="graph"></div>
+<div id="sidebar">
+  <div id="search-wrap">
+    <input id="search" type="text" placeholder="Search nodes..." autocomplete="off">
+    <div id="search-results"></div>
+  </div>
+  <div id="info-panel">
+    <h3>Node Info</h3>
+    <div id="info-content"><span class="empty">Click a node to inspect it</span></div>
+  </div>
+  <div id="legend-wrap">
+    <h3>Communities</h3>
+    <div id="legend-controls">
+      <button onclick="toggleAllCommunities(false)">Show All</button>
+      <button onclick="toggleAllCommunities(true)">Hide All</button>
+    </div>
+    <div id="legend"></div>
+  </div>
+  <div id="stats">43 nodes &middot; 85 edges &middot; 12 communities</div>
+</div>
+<script>
+const RAW_NODES = [{"id": "readme_gclimb", "label": "Gclimb Repository", "color": {"background": "#F28E2B", "border": "#F28E2B", "highlight": {"background": "#ffffff", "border": "#F28E2B"}}, "size": 11.8, "font": {"size": 0, "color": "#ffffff"}, "title": "Gclimb Repository", "community": 1, "community_name": "Gclimb Project & CI", "source_file": "README.md", "file_type": "document", "degree": 1}, {"id": "claude_gclimb_project", "label": "Gclimb SmartThings Healthcare IoT Project", "color": {"background": "#F28E2B", "border": "#F28E2B", "highlight": {"background": "#ffffff", "border": "#F28E2B"}}, "size": 40.0, "font": {"size": 12, "color": "#ffffff"}, "title": "Gclimb SmartThings Healthcare IoT Project", "community": 1, "community_name": "Gclimb Project & CI", "source_file": "CLAUDE.md", "file_type": "document", "degree": 17}, {"id": "claude_device_handler", "label": "SmartThings Device Handler", "color": {"background": "#4E79A7", "border": "#4E79A7", "highlight": {"background": "#ffffff", "border": "#4E79A7"}}, "size": 18.8, "font": {"size": 12, "color": "#ffffff"}, "title": "SmartThings Device Handler", "community": 0, "community_name": "Device Protocols & Handlers", "source_file": "CLAUDE.md", "file_type": "document", "degree": 5}, {"id": "claude_smartapp", "label": "SmartApp", "color": {"background": "#EDC948", "border": "#EDC948", "highlight": {"background": "#ffffff", "border": "#EDC948"}}, "size": 13.5, "font": {"size": 0, "color": "#ffffff"}, "title": "SmartApp", "community": 5, "community_name": "SmartApps & Platform", "source_file": "CLAUDE.md", "file_type": "document", "degree": 2}, {"id": "claude_codenarc", "label": "CodeNarc Groovy Linting", "color": {"background": "#F28E2B", "border": "#F28E2B", "highlight": {"background": "#ffffff", "border": "#F28E2B"}}, "size": 13.5, "font": {"size": 0, "color": "#ffffff"}, "title": "CodeNarc Groovy Linting", "community": 1, "community_name": "Gclimb Project & CI", "source_file": "CLAUDE.md", "file_type": "document", "degree": 2}, {"id": "claude_github_actions_ci", "label": "GitHub Actions CI", "color": {"background": "#F28E2B", "border": "#F28E2B", "highlight": {"background": "#ffffff", "border": "#F28E2B"}}, "size": 13.5, "font": {"size": 0, "color": "#ffffff"}, "title": "GitHub Actions CI", "community": 1, "community_name": "Gclimb Project & CI", "source_file": "CLAUDE.md", "file_type": "document", "degree": 2}, {"id": "claude_zwave", "label": "Z-Wave Protocol", "color": {"background": "#4E79A7", "border": "#4E79A7", "highlight": {"background": "#ffffff", "border": "#4E79A7"}}, "size": 24.1, "font": {"size": 12, "color": "#ffffff"}, "title": "Z-Wave Protocol", "community": 0, "community_name": "Device Protocols & Handlers", "source_file": "CLAUDE.md", "file_type": "document", "degree": 8}, {"id": "claude_zigbee", "label": "Zigbee Protocol", "color": {"background": "#4E79A7", "border": "#4E79A7", "highlight": {"background": "#ffffff", "border": "#4E79A7"}}, "size": 18.8, "font": {"size": 12, "color": "#ffffff"}, "title": "Zigbee Protocol", "community": 0, "community_name": "Device Protocols & Handlers", "source_file": "CLAUDE.md", "file_type": "document", "degree": 5}, {"id": "claude_hl7_fhir", "label": "HL7 FHIR", "color": {"background": "#76B7B2", "border": "#76B7B2", "highlight": {"background": "#ffffff", "border": "#76B7B2"}}, "size": 17.1, "font": {"size": 12, "color": "#ffffff"}, "title": "HL7 FHIR", "community": 3, "community_name": "Health Standards & Devices", "source_file": "CLAUDE.md", "file_type": "document", "degree": 4}, {"id": "claude_ieee11073", "label": "IEEE 11073", "color": {"background": "#76B7B2", "border": "#76B7B2", "highlight": {"background": "#ffffff", "border": "#76B7B2"}}, "size": 15.3, "font": {"size": 12, "color": "#ffffff"}, "title": "IEEE 11073", "community": 3, "community_name": "Health Standards & Devices", "source_file": "CLAUDE.md", "file_type": "document", "degree": 3}, {"id": "claude_continua", "label": "Continua Health Alliance", "color": {"background": "#76B7B2", "border": "#76B7B2", "highlight": {"background": "#ffffff", "border": "#76B7B2"}}, "size": 15.3, "font": {"size": 12, "color": "#ffffff"}, "title": "Continua Health Alliance", "community": 3, "community_name": "Health Standards & Devices", "source_file": "CLAUDE.md", "file_type": "document", "degree": 3}, {"id": "claude_second_brain", "label": "Second Brain Obsidian Vault", "color": {"background": "#59A14F", "border": "#59A14F", "highlight": {"background": "#ffffff", "border": "#59A14F"}}, "size": 18.8, "font": {"size": 12, "color": "#ffffff"}, "title": "Second Brain Obsidian Vault", "community": 4, "community_name": "Second Brain & PARA", "source_file": "CLAUDE.md", "file_type": "document", "degree": 5}, {"id": "home_second_brain", "label": "Second Brain Home Dashboard", "color": {"background": "#59A14F", "border": "#59A14F", "highlight": {"background": "#ffffff", "border": "#59A14F"}}, "size": 24.1, "font": {"size": 12, "color": "#ffffff"}, "title": "Second Brain Home Dashboard", "community": 4, "community_name": "Second Brain & PARA", "source_file": "second-brain/Home.md", "file_type": "document", "degree": 8}, {"id": "home_para", "label": "PARA Method", "color": {"background": "#59A14F", "border": "#59A14F", "highlight": {"background": "#ffffff", "border": "#59A14F"}}, "size": 13.5, "font": {"size": 0, "color": "#ffffff"}, "title": "PARA Method", "community": 4, "community_name": "Second Brain & PARA", "source_file": "second-brain/Home.md", "file_type": "document", "degree": 2}, {"id": "template_meeting_note", "label": "Meeting Note Template", "color": {"background": "#FF9DA7", "border": "#FF9DA7", "highlight": {"background": "#ffffff", "border": "#FF9DA7"}}, "size": 10.0, "font": {"size": 0, "color": "#ffffff"}, "title": "Meeting Note Template", "community": 7, "community_name": "Meeting Notes", "source_file": "second-brain/05-Templates/Meeting Note.md", "file_type": "document", "degree": 0}, {"id": "template_project", "label": "Project Template", "color": {"background": "#9C755F", "border": "#9C755F", "highlight": {"background": "#ffffff", "border": "#9C755F"}}, "size": 10.0, "font": {"size": 0, "color": "#ffffff"}, "title": "Project Template", "community": 8, "community_name": "Project Templates", "source_file": "second-brain/05-Templates/Project.md", "file_type": "document", "degree": 0}, {"id": "template_healthcare_device", "label": "Healthcare Device Template", "color": {"background": "#4E79A7", "border": "#4E79A7", "highlight": {"background": "#ffffff", "border": "#4E79A7"}}, "size": 17.1, "font": {"size": 12, "color": "#ffffff"}, "title": "Healthcare Device Template", "community": 0, "community_name": "Device Protocols & Handlers", "source_file": "second-brain/05-Templates/Healthcare Device.md", "file_type": "document", "degree": 4}, {"id": "template_moc", "label": "MOC Template", "color": {"background": "#BAB0AC", "border": "#BAB0AC", "highlight": {"background": "#ffffff", "border": "#BAB0AC"}}, "size": 10.0, "font": {"size": 0, "color": "#ffffff"}, "title": "MOC Template", "community": 9, "community_name": "MOC Templates", "source_file": "second-brain/05-Templates/MOC.md", "file_type": "document", "degree": 0}, {"id": "template_fleeting_note", "label": "Fleeting Note Template", "color": {"background": "#4E79A7", "border": "#4E79A7", "highlight": {"background": "#ffffff", "border": "#4E79A7"}}, "size": 10.0, "font": {"size": 0, "color": "#ffffff"}, "title": "Fleeting Note Template", "community": 10, "community_name": "Fleeting Notes", "source_file": "second-brain/05-Templates/Fleeting Note.md", "file_type": "document", "degree": 0}, {"id": "template_daily_note", "label": "Daily Note Template", "color": {"background": "#F28E2B", "border": "#F28E2B", "highlight": {"background": "#ffffff", "border": "#F28E2B"}}, "size": 10.0, "font": {"size": 0, "color": "#ffffff"}, "title": "Daily Note Template", "community": 11, "community_name": "Daily Notes", "source_file": "second-brain/05-Templates/Daily Note.md", "file_type": "document", "degree": 0}, {"id": "moc_projects", "label": "Projects MOC", "color": {"background": "#EDC948", "border": "#EDC948", "highlight": {"background": "#ffffff", "border": "#EDC948"}}, "size": 13.5, "font": {"size": 0, "color": "#ffffff"}, "title": "Projects MOC", "community": 5, "community_name": "SmartApps & Platform", "source_file": "second-brain/07-MOCs/Projects MOC.md", "file_type": "document", "degree": 2}, {"id": "moc_smartthings", "label": "SmartThings MOC", "color": {"background": "#B07AA1", "border": "#B07AA1", "highlight": {"background": "#ffffff", "border": "#B07AA1"}}, "size": 20.6, "font": {"size": 12, "color": "#ffffff"}, "title": "SmartThings MOC", "community": 6, "community_name": "SmartThings Dev Area", "source_file": "second-brain/07-MOCs/SmartThings MOC.md", "file_type": "document", "degree": 6}, {"id": "moc_resources", "label": "Resources MOC", "color": {"background": "#E15759", "border": "#E15759", "highlight": {"background": "#ffffff", "border": "#E15759"}}, "size": 20.6, "font": {"size": 12, "color": "#ffffff"}, "title": "Resources MOC", "community": 2, "community_name": "Healthcare IoT Knowledge", "source_file": "second-brain/07-MOCs/Resources MOC.md", "file_type": "document", "degree": 6}, {"id": "moc_areas", "label": "Areas MOC", "color": {"background": "#B07AA1", "border": "#B07AA1", "highlight": {"background": "#ffffff", "border": "#B07AA1"}}, "size": 15.3, "font": {"size": 12, "color": "#ffffff"}, "title": "Areas MOC", "community": 6, "community_name": "SmartThings Dev Area", "source_file": "second-brain/07-MOCs/Areas MOC.md", "file_type": "document", "degree": 3}, {"id": "moc_healthcare_iot", "label": "Healthcare IoT MOC", "color": {"background": "#E15759", "border": "#E15759", "highlight": {"background": "#ffffff", "border": "#E15759"}}, "size": 27.6, "font": {"size": 12, "color": "#ffffff"}, "title": "Healthcare IoT MOC", "community": 2, "community_name": "Healthcare IoT Knowledge", "source_file": "second-brain/07-MOCs/Healthcare IoT MOC.md", "file_type": "document", "degree": 10}, {"id": "inbox_inbox", "label": "Inbox", "color": {"background": "#59A14F", "border": "#59A14F", "highlight": {"background": "#ffffff", "border": "#59A14F"}}, "size": 11.8, "font": {"size": 0, "color": "#ffffff"}, "title": "Inbox", "community": 4, "community_name": "Second Brain & PARA", "source_file": "second-brain/00-Inbox/Inbox.md", "file_type": "document", "degree": 1}, {"id": "area_healthcare_iot", "label": "Healthcare IoT Area", "color": {"background": "#76B7B2", "border": "#76B7B2", "highlight": {"background": "#ffffff", "border": "#76B7B2"}}, "size": 29.4, "font": {"size": 12, "color": "#ffffff"}, "title": "Healthcare IoT Area", "community": 3, "community_name": "Health Standards & Devices", "source_file": "second-brain/02-Areas/Healthcare-IoT/Overview.md", "file_type": "document", "degree": 11}, {"id": "area_smartthings_dev", "label": "SmartThings Development Area", "color": {"background": "#B07AA1", "border": "#B07AA1", "highlight": {"background": "#ffffff", "border": "#B07AA1"}}, "size": 13.5, "font": {"size": 0, "color": "#ffffff"}, "title": "SmartThings Development Area", "community": 6, "community_name": "SmartThings Dev Area", "source_file": "second-brain/02-Areas/SmartThings-Dev/Overview.md", "file_type": "document", "degree": 2}, {"id": "resource_smartthings_platform", "label": "SmartThings Platform Resource", "color": {"background": "#EDC948", "border": "#EDC948", "highlight": {"background": "#ffffff", "border": "#EDC948"}}, "size": 18.8, "font": {"size": 12, "color": "#ffffff"}, "title": "SmartThings Platform Resource", "community": 5, "community_name": "SmartApps & Platform", "source_file": "second-brain/03-Resources/SmartThings Platform.md", "file_type": "document", "degree": 5}, {"id": "resource_zwave_protocol", "label": "Z-Wave Protocol Resource", "color": {"background": "#4E79A7", "border": "#4E79A7", "highlight": {"background": "#ffffff", "border": "#4E79A7"}}, "size": 25.9, "font": {"size": 12, "color": "#ffffff"}, "title": "Z-Wave Protocol Resource", "community": 0, "community_name": "Device Protocols & Handlers", "source_file": "second-brain/03-Resources/Z-Wave Protocol.md", "file_type": "document", "degree": 9}, {"id": "resource_zigbee_protocol", "label": "Zigbee Protocol Resource", "color": {"background": "#E15759", "border": "#E15759", "highlight": {"background": "#ffffff", "border": "#E15759"}}, "size": 20.6, "font": {"size": 12, "color": "#ffffff"}, "title": "Zigbee Protocol Resource", "community": 2, "community_name": "Healthcare IoT Knowledge", "source_file": "second-brain/03-Resources/Zigbee Protocol.md", "file_type": "document", "degree": 6}, {"id": "project_gclimb_hub", "label": "gclimb Healthcare IoT Hub Project", "color": {"background": "#EDC948", "border": "#EDC948", "highlight": {"background": "#ffffff", "border": "#EDC948"}}, "size": 25.9, "font": {"size": 12, "color": "#ffffff"}, "title": "gclimb Healthcare IoT Hub Project", "community": 5, "community_name": "SmartApps & Platform", "source_file": "second-brain/01-Projects/gclimb - Healthcare IoT Hub.md", "file_type": "document", "degree": 9}, {"id": "resource_zwave_healthcare_devices", "label": "Z-Wave Healthcare Devices", "color": {"background": "#E15759", "border": "#E15759", "highlight": {"background": "#ffffff", "border": "#E15759"}}, "size": 13.5, "font": {"size": 0, "color": "#ffffff"}, "title": "Z-Wave Healthcare Devices", "community": 2, "community_name": "Healthcare IoT Knowledge", "source_file": "second-brain/07-MOCs/Resources MOC.md", "file_type": "document", "degree": 2}, {"id": "resource_zigbee_healthcare_devices", "label": "Zigbee Healthcare Devices", "color": {"background": "#E15759", "border": "#E15759", "highlight": {"background": "#ffffff", "border": "#E15759"}}, "size": 13.5, "font": {"size": 0, "color": "#ffffff"}, "title": "Zigbee Healthcare Devices", "community": 2, "community_name": "Healthcare IoT Knowledge", "source_file": "second-brain/07-MOCs/Resources MOC.md", "file_type": "document", "degree": 2}, {"id": "claude_fall_detector", "label": "Fall Detector Device", "color": {"background": "#4E79A7", "border": "#4E79A7", "highlight": {"background": "#ffffff", "border": "#4E79A7"}}, "size": 18.8, "font": {"size": 12, "color": "#ffffff"}, "title": "Fall Detector Device", "community": 0, "community_name": "Device Protocols & Handlers", "source_file": "CLAUDE.md", "file_type": "document", "degree": 5}, {"id": "claude_vital_sign_monitor", "label": "Vital Sign Monitor Device", "color": {"background": "#76B7B2", "border": "#76B7B2", "highlight": {"background": "#ffffff", "border": "#76B7B2"}}, "size": 15.3, "font": {"size": 12, "color": "#ffffff"}, "title": "Vital Sign Monitor Device", "community": 3, "community_name": "Health Standards & Devices", "source_file": "CLAUDE.md", "file_type": "document", "degree": 3}, {"id": "claude_glucose_meter", "label": "Glucose Meter Device", "color": {"background": "#F28E2B", "border": "#F28E2B", "highlight": {"background": "#ffffff", "border": "#F28E2B"}}, "size": 13.5, "font": {"size": 0, "color": "#ffffff"}, "title": "Glucose Meter Device", "community": 1, "community_name": "Gclimb Project & CI", "source_file": "CLAUDE.md", "file_type": "document", "degree": 2}, {"id": "claude_sleep_tracker", "label": "Sleep Tracker Device", "color": {"background": "#F28E2B", "border": "#F28E2B", "highlight": {"background": "#ffffff", "border": "#F28E2B"}}, "size": 13.5, "font": {"size": 0, "color": "#ffffff"}, "title": "Sleep Tracker Device", "community": 1, "community_name": "Gclimb Project & CI", "source_file": "CLAUDE.md", "file_type": "document", "degree": 2}, {"id": "claude_medication_dispenser", "label": "Medication Dispenser Device", "color": {"background": "#F28E2B", "border": "#F28E2B", "highlight": {"background": "#ffffff", "border": "#F28E2B"}}, "size": 13.5, "font": {"size": 0, "color": "#ffffff"}, "title": "Medication Dispenser Device", "community": 1, "community_name": "Gclimb Project & CI", "source_file": "CLAUDE.md", "file_type": "document", "degree": 2}, {"id": "claude_ambient_assisted_living", "label": "Ambient Assisted Living (AAL)", "color": {"background": "#4E79A7", "border": "#4E79A7", "highlight": {"background": "#ffffff", "border": "#4E79A7"}}, "size": 17.1, "font": {"size": 12, "color": "#ffffff"}, "title": "Ambient Assisted Living (AAL)", "community": 0, "community_name": "Device Protocols & Handlers", "source_file": "CLAUDE.md", "file_type": "document", "degree": 4}, {"id": "claude_remote_patient_monitoring", "label": "Remote Patient Monitoring", "color": {"background": "#E15759", "border": "#E15759", "highlight": {"background": "#ffffff", "border": "#E15759"}}, "size": 13.5, "font": {"size": 0, "color": "#ffffff"}, "title": "Remote Patient Monitoring", "community": 2, "community_name": "Healthcare IoT Knowledge", "source_file": "second-brain/07-MOCs/Healthcare IoT MOC.md", "file_type": "document", "degree": 2}, {"id": "claude_zwave_s0", "label": "Z-Wave S0 Secure Encapsulation", "color": {"background": "#4E79A7", "border": "#4E79A7", "highlight": {"background": "#ffffff", "border": "#4E79A7"}}, "size": 15.3, "font": {"size": 12, "color": "#ffffff"}, "title": "Z-Wave S0 Secure Encapsulation", "community": 0, "community_name": "Device Protocols & Handlers", "source_file": "CLAUDE.md", "file_type": "document", "degree": 3}, {"id": "resource_zwave_command_class_security", "label": "Z-Wave COMMAND_CLASS_SECURITY", "color": {"background": "#4E79A7", "border": "#4E79A7", "highlight": {"background": "#ffffff", "border": "#4E79A7"}}, "size": 13.5, "font": {"size": 0, "color": "#ffffff"}, "title": "Z-Wave COMMAND_CLASS_SECURITY", "community": 0, "community_name": "Device Protocols & Handlers", "source_file": "second-brain/03-Resources/Z-Wave Protocol.md", "file_type": "document", "degree": 2}];
+const RAW_EDGES = [{"from": "readme_gclimb", "to": "claude_gclimb_project", "label": "references", "title": "references [INFERRED]", "dashes": true, "width": 1, "color": {"opacity": 0.35}, "confidence": "INFERRED"}, {"from": "claude_gclimb_project", "to": "claude_device_handler", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "claude_gclimb_project", "to": "claude_smartapp", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "claude_gclimb_project", "to": "claude_codenarc", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "claude_gclimb_project", "to": "claude_github_actions_ci", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "claude_gclimb_project", "to": "claude_zwave", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "claude_gclimb_project", "to": "claude_zigbee", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "claude_gclimb_project", "to": "claude_hl7_fhir", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "claude_gclimb_project", "to": "claude_ieee11073", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "claude_gclimb_project", "to": "claude_continua", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "claude_gclimb_project", "to": "claude_second_brain", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "claude_gclimb_project", "to": "claude_vital_sign_monitor", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "claude_gclimb_project", "to": "claude_glucose_meter", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "claude_gclimb_project", "to": "claude_fall_detector", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "claude_gclimb_project", "to": "claude_sleep_tracker", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "claude_gclimb_project", "to": "claude_medication_dispenser", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "claude_gclimb_project", "to": "project_gclimb_hub", "label": "conceptually_related_to", "title": "conceptually_related_to [INFERRED]", "dashes": true, "width": 1, "color": {"opacity": 0.35}, "confidence": "INFERRED"}, {"from": "claude_device_handler", "to": "claude_zwave", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "claude_device_handler", "to": "claude_zigbee", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "claude_device_handler", "to": "template_healthcare_device", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "claude_device_handler", "to": "resource_smartthings_platform", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "claude_smartapp", "to": "resource_smartthings_platform", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "claude_codenarc", "to": "claude_github_actions_ci", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "claude_zwave", "to": "claude_fall_detector", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "claude_zwave", "to": "claude_ambient_assisted_living", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "claude_zwave", "to": "claude_zwave_s0", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "claude_zwave", "to": "template_healthcare_device", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "claude_zwave", "to": "resource_zwave_protocol", "label": "conceptually_related_to", "title": "conceptually_related_to [INFERRED]", "dashes": true, "width": 1, "color": {"opacity": 0.35}, "confidence": "INFERRED"}, {"from": "claude_zwave", "to": "claude_zigbee", "label": "semantically_similar_to", "title": "semantically_similar_to [INFERRED]", "dashes": true, "width": 1, "color": {"opacity": 0.35}, "confidence": "INFERRED"}, {"from": "claude_zigbee", "to": "template_healthcare_device", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "claude_zigbee", "to": "resource_zigbee_protocol", "label": "conceptually_related_to", "title": "conceptually_related_to [INFERRED]", "dashes": true, "width": 1, "color": {"opacity": 0.35}, "confidence": "INFERRED"}, {"from": "claude_hl7_fhir", "to": "area_healthcare_iot", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "claude_hl7_fhir", "to": "claude_ieee11073", "label": "semantically_similar_to", "title": "semantically_similar_to [INFERRED]", "dashes": true, "width": 1, "color": {"opacity": 0.35}, "confidence": "INFERRED"}, {"from": "claude_hl7_fhir", "to": "claude_continua", "label": "semantically_similar_to", "title": "semantically_similar_to [INFERRED]", "dashes": true, "width": 1, "color": {"opacity": 0.35}, "confidence": "INFERRED"}, {"from": "claude_ieee11073", "to": "area_healthcare_iot", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "claude_continua", "to": "area_healthcare_iot", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "claude_second_brain", "to": "template_healthcare_device", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "claude_second_brain", "to": "project_gclimb_hub", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "claude_second_brain", "to": "home_second_brain", "label": "conceptually_related_to", "title": "conceptually_related_to [INFERRED]", "dashes": true, "width": 1, "color": {"opacity": 0.35}, "confidence": "INFERRED"}, {"from": "claude_second_brain", "to": "home_para", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_second_brain", "to": "moc_projects", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_second_brain", "to": "moc_areas", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_second_brain", "to": "moc_resources", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_second_brain", "to": "moc_healthcare_iot", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_second_brain", "to": "moc_smartthings", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_second_brain", "to": "inbox_inbox", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "home_second_brain", "to": "home_para", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "moc_projects", "to": "project_gclimb_hub", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "moc_smartthings", "to": "project_gclimb_hub", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "moc_smartthings", "to": "resource_smartthings_platform", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "moc_smartthings", "to": "resource_zwave_protocol", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "moc_smartthings", "to": "resource_zigbee_protocol", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "moc_smartthings", "to": "area_smartthings_dev", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "moc_resources", "to": "resource_zwave_protocol", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "moc_resources", "to": "resource_zigbee_protocol", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "moc_resources", "to": "resource_smartthings_platform", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "moc_resources", "to": "resource_zwave_healthcare_devices", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "moc_resources", "to": "resource_zigbee_healthcare_devices", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "moc_areas", "to": "area_healthcare_iot", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "moc_areas", "to": "area_smartthings_dev", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "moc_healthcare_iot", "to": "project_gclimb_hub", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "moc_healthcare_iot", "to": "resource_zwave_healthcare_devices", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "moc_healthcare_iot", "to": "resource_zigbee_healthcare_devices", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "moc_healthcare_iot", "to": "resource_zwave_protocol", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "moc_healthcare_iot", "to": "resource_zigbee_protocol", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "moc_healthcare_iot", "to": "area_healthcare_iot", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "moc_healthcare_iot", "to": "claude_remote_patient_monitoring", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "moc_healthcare_iot", "to": "claude_fall_detector", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "moc_healthcare_iot", "to": "claude_ambient_assisted_living", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "area_healthcare_iot", "to": "project_gclimb_hub", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "area_healthcare_iot", "to": "claude_vital_sign_monitor", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "area_healthcare_iot", "to": "claude_glucose_meter", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "area_healthcare_iot", "to": "claude_fall_detector", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "area_healthcare_iot", "to": "claude_sleep_tracker", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "area_healthcare_iot", "to": "claude_medication_dispenser", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "resource_smartthings_platform", "to": "project_gclimb_hub", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "resource_zwave_protocol", "to": "project_gclimb_hub", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "resource_zwave_protocol", "to": "claude_zwave_s0", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "resource_zwave_protocol", "to": "resource_zwave_command_class_security", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "resource_zwave_protocol", "to": "claude_fall_detector", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "resource_zwave_protocol", "to": "claude_ambient_assisted_living", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "resource_zigbee_protocol", "to": "project_gclimb_hub", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "resource_zigbee_protocol", "to": "claude_vital_sign_monitor", "label": "references", "title": "references [EXTRACTED]", "dashes": false, "width": 2, "color": {"opacity": 0.7}, "confidence": "EXTRACTED"}, {"from": "claude_ambient_assisted_living", "to": "claude_remote_patient_monitoring", "label": "semantically_similar_to", "title": "semantically_similar_to [INFERRED]", "dashes": true, "width": 1, "color": {"opacity": 0.35}, "confidence": "INFERRED"}, {"from": "claude_zwave_s0", "to": "resource_zwave_command_class_security", "label": "conceptually_related_to", "title": "conceptually_related_to [INFERRED]", "dashes": true, "width": 1, "color": {"opacity": 0.35}, "confidence": "INFERRED"}];
+const LEGEND = [{"cid": 0, "color": "#4E79A7", "label": "Device Protocols &amp; Handlers", "count": 9}, {"cid": 1, "color": "#F28E2B", "label": "Gclimb Project &amp; CI", "count": 7}, {"cid": 2, "color": "#E15759", "label": "Healthcare IoT Knowledge", "count": 6}, {"cid": 3, "color": "#76B7B2", "label": "Health Standards &amp; Devices", "count": 5}, {"cid": 4, "color": "#59A14F", "label": "Second Brain &amp; PARA", "count": 4}, {"cid": 5, "color": "#EDC948", "label": "SmartApps &amp; Platform", "count": 4}, {"cid": 6, "color": "#B07AA1", "label": "SmartThings Dev Area", "count": 3}, {"cid": 7, "color": "#FF9DA7", "label": "Meeting Notes", "count": 1}, {"cid": 8, "color": "#9C755F", "label": "Project Templates", "count": 1}, {"cid": 9, "color": "#BAB0AC", "label": "MOC Templates", "count": 1}, {"cid": 10, "color": "#4E79A7", "label": "Fleeting Notes", "count": 1}, {"cid": 11, "color": "#F28E2B", "label": "Daily Notes", "count": 1}];
+
+// HTML-escape helper — prevents XSS when injecting graph data into innerHTML
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// Build vis datasets
+const nodesDS = new vis.DataSet(RAW_NODES.map(n => ({
+  id: n.id, label: n.label, color: n.color, size: n.size,
+  font: n.font, title: n.title,
+  _community: n.community, _community_name: n.community_name,
+  _source_file: n.source_file, _file_type: n.file_type, _degree: n.degree,
+})));
+
+const edgesDS = new vis.DataSet(RAW_EDGES.map((e, i) => ({
+  id: i, from: e.from, to: e.to,
+  label: '',
+  title: e.title,
+  dashes: e.dashes,
+  width: e.width,
+  color: e.color,
+  arrows: { to: { enabled: true, scaleFactor: 0.5 } },
+})));
+
+const container = document.getElementById('graph');
+const network = new vis.Network(container, { nodes: nodesDS, edges: edgesDS }, {
+  physics: {
+    enabled: true,
+    solver: 'forceAtlas2Based',
+    forceAtlas2Based: {
+      gravitationalConstant: -60,
+      centralGravity: 0.005,
+      springLength: 120,
+      springConstant: 0.08,
+      damping: 0.4,
+      avoidOverlap: 0.8,
+    },
+    stabilization: { iterations: 200, fit: true },
+  },
+  interaction: {
+    hover: true,
+    tooltipDelay: 100,
+    hideEdgesOnDrag: true,
+    navigationButtons: false,
+    keyboard: false,
+  },
+  nodes: { shape: 'dot', borderWidth: 1.5 },
+  edges: { smooth: { type: 'continuous', roundness: 0.2 }, selectionWidth: 3 },
+});
+
+network.once('stabilizationIterationsDone', () => {
+  network.setOptions({ physics: { enabled: false } });
+});
+
+function showInfo(nodeId) {
+  const n = nodesDS.get(nodeId);
+  if (!n) return;
+  const neighborIds = network.getConnectedNodes(nodeId);
+  const neighborItems = neighborIds.map(nid => {
+    const nb = nodesDS.get(nid);
+    const color = nb ? nb.color.background : '#555';
+    return `<span class="neighbor-link" style="border-left-color:${esc(color)}" onclick="focusNode(${JSON.stringify(nid)})">${esc(nb ? nb.label : nid)}</span>`;
+  }).join('');
+  document.getElementById('info-content').innerHTML = `
+    <div class="field"><b>${esc(n.label)}</b></div>
+    <div class="field">Type: ${esc(n._file_type || 'unknown')}</div>
+    <div class="field">Community: ${esc(n._community_name)}</div>
+    <div class="field">Source: ${esc(n._source_file || '-')}</div>
+    <div class="field">Degree: ${n._degree}</div>
+    ${neighborIds.length ? `<div class="field" style="margin-top:8px;color:#aaa;font-size:11px">Neighbors (${neighborIds.length})</div><div id="neighbors-list">${neighborItems}</div>` : ''}
+  `;
+}
+
+function focusNode(nodeId) {
+  network.focus(nodeId, { scale: 1.4, animation: true });
+  network.selectNodes([nodeId]);
+  showInfo(nodeId);
+}
+
+// Track hovered node — hover detection is more reliable than click params
+let hoveredNodeId = null;
+network.on('hoverNode', params => {
+  hoveredNodeId = params.node;
+  container.style.cursor = 'pointer';
+});
+network.on('blurNode', () => {
+  hoveredNodeId = null;
+  container.style.cursor = 'default';
+});
+container.addEventListener('click', () => {
+  if (hoveredNodeId !== null) {
+    showInfo(hoveredNodeId);
+    network.selectNodes([hoveredNodeId]);
+  }
+});
+network.on('click', params => {
+  if (params.nodes.length > 0) {
+    showInfo(params.nodes[0]);
+  } else if (hoveredNodeId === null) {
+    document.getElementById('info-content').innerHTML = '<span class="empty">Click a node to inspect it</span>';
+  }
+});
+
+const searchInput = document.getElementById('search');
+const searchResults = document.getElementById('search-results');
+searchInput.addEventListener('input', () => {
+  const q = searchInput.value.toLowerCase().trim();
+  searchResults.innerHTML = '';
+  if (!q) { searchResults.style.display = 'none'; return; }
+  const matches = RAW_NODES.filter(n => n.label.toLowerCase().includes(q)).slice(0, 20);
+  if (!matches.length) { searchResults.style.display = 'none'; return; }
+  searchResults.style.display = 'block';
+  matches.forEach(n => {
+    const el = document.createElement('div');
+    el.className = 'search-item';
+    el.textContent = n.label;
+    el.style.borderLeft = `3px solid ${n.color.background}`;
+    el.style.paddingLeft = '8px';
+    el.onclick = () => {
+      network.focus(n.id, { scale: 1.5, animation: true });
+      network.selectNodes([n.id]);
+      showInfo(n.id);
+      searchResults.style.display = 'none';
+      searchInput.value = '';
+    };
+    searchResults.appendChild(el);
+  });
+});
+document.addEventListener('click', e => {
+  if (!searchResults.contains(e.target) && e.target !== searchInput)
+    searchResults.style.display = 'none';
+});
+
+const hiddenCommunities = new Set();
+
+function toggleAllCommunities(hide) {
+  document.querySelectorAll('.legend-item').forEach(item => {
+    hide ? item.classList.add('dimmed') : item.classList.remove('dimmed');
+  });
+  LEGEND.forEach(c => {
+    if (hide) hiddenCommunities.add(c.cid); else hiddenCommunities.delete(c.cid);
+  });
+  const updates = RAW_NODES.map(n => ({ id: n.id, hidden: hide }));
+  nodesDS.update(updates);
+}
+
+const legendEl = document.getElementById('legend');
+LEGEND.forEach(c => {
+  const item = document.createElement('div');
+  item.className = 'legend-item';
+  item.innerHTML = `<div class="legend-dot" style="background:${c.color}"></div>
+    <span class="legend-label">${c.label}</span>
+    <span class="legend-count">${c.count}</span>`;
+  item.onclick = () => {
+    if (hiddenCommunities.has(c.cid)) {
+      hiddenCommunities.delete(c.cid);
+      item.classList.remove('dimmed');
+    } else {
+      hiddenCommunities.add(c.cid);
+      item.classList.add('dimmed');
+    }
+    const updates = RAW_NODES
+      .filter(n => n.community === c.cid)
+      .map(n => ({ id: n.id, hidden: hiddenCommunities.has(c.cid) }));
+    nodesDS.update(updates);
+  };
+  legendEl.appendChild(item);
+});
+</script>
+<script>
+// Render hyperedges as shaded regions
+const hyperedges = [{"id": "healthcare_iot_integration_stack", "label": "Healthcare IoT Integration Stack", "nodes": ["claude_device_handler", "resource_zwave_protocol", "resource_zigbee_protocol", "resource_smartthings_platform"], "relation": "implement", "confidence": "INFERRED", "confidence_score": 0.88, "source_file": "CLAUDE.md"}, {"id": "healthcare_standards_compliance", "label": "Healthcare Standards Compliance Framework", "nodes": ["claude_hl7_fhir", "claude_ieee11073", "claude_continua"], "relation": "form", "confidence": "INFERRED", "confidence_score": 0.82, "source_file": "second-brain/02-Areas/Healthcare-IoT/Overview.md"}, {"id": "gclimb_knowledge_management", "label": "Gclimb Knowledge Management System", "nodes": ["claude_second_brain", "home_para", "template_healthcare_device", "project_gclimb_hub"], "relation": "participate_in", "confidence": "EXTRACTED", "confidence_score": 0.9, "source_file": "CLAUDE.md"}];
+// afterDrawing passes ctx already transformed to network coordinate space.
+// Draw node positions raw — no manual pan/zoom/DPR math needed.
+network.on('afterDrawing', function(ctx) {
+    hyperedges.forEach(h => {
+        const positions = h.nodes
+            .map(nid => network.getPositions([nid])[nid])
+            .filter(p => p !== undefined);
+        if (positions.length < 2) return;
+        ctx.save();
+        ctx.globalAlpha = 0.12;
+        ctx.fillStyle = '#6366f1';
+        ctx.strokeStyle = '#6366f1';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        // Centroid and expanded hull in network coordinates
+        const cx = positions.reduce((s, p) => s + p.x, 0) / positions.length;
+        const cy = positions.reduce((s, p) => s + p.y, 0) / positions.length;
+        const expanded = positions.map(p => ({
+            x: cx + (p.x - cx) * 1.15,
+            y: cy + (p.y - cy) * 1.15
+        }));
+        ctx.moveTo(expanded[0].x, expanded[0].y);
+        expanded.slice(1).forEach(p => ctx.lineTo(p.x, p.y));
+        ctx.closePath();
+        ctx.fill();
+        ctx.globalAlpha = 0.4;
+        ctx.stroke();
+        // Label
+        ctx.globalAlpha = 0.8;
+        ctx.fillStyle = '#4f46e5';
+        ctx.font = 'bold 11px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(h.label, cx, cy - 5);
+        ctx.restore();
+    });
+});
+</script>
+</body>
+</html>
