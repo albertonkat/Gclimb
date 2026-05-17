@@ -119,11 +119,23 @@ class ClaudeOrchestrator:
     def _claude(self, system: str, messages: list[dict]) -> str:
         response = self._client.messages.create(
             model=self.claude_model,
-            max_tokens=2048,
+            max_tokens=4096,
             system=system,
             messages=messages,
         )
         return response.content[0].text.strip()
+
+    def _claude_codegen(self, task: str, context: str = "") -> CodexResult:
+        """Claude generates code directly — used as fallback when Codex is unavailable."""
+        from codex_agent import CodexResult as CR
+
+        system = (
+            "You are a code-generation assistant. Write only the requested code — "
+            "no prose outside fenced blocks. Be minimal and correct."
+        )
+        user_msg = task if not context else f"Context:\n{context}\n\nTask:\n{task}"
+        code = self._claude(system, [{"role": "user", "content": user_msg}])
+        return CR(code=code, model=self.claude_model, tokens_used=0, note="Claude fallback (Codex unavailable)")
 
     def _plan(self, user_task: str) -> dict:
         """Ask Claude to classify the task and build a routing plan."""
@@ -198,30 +210,50 @@ class ClaudeOrchestrator:
         codex_result: Optional[CodexResult] = None
         gemini_result: Optional[GeminiResult] = None
 
+        gemini_available = True
+
         # --- Step 1: Research (Gemini) if needed first ---
         if "gemini" in routing and plan.get("gemini_prompt"):
             gemini_mode = task_type in (TaskType.RESEARCH, TaskType.REVIEW)
             if gemini_mode or task_type == TaskType.HYBRID:
-                gemini_result = self._gemini.research(plan["gemini_prompt"])
+                try:
+                    gemini_result = self._gemini.research(plan["gemini_prompt"])
+                except Exception as exc:
+                    print(f"[warn] Gemini research skipped: {exc}")
+                    gemini_available = False
 
-        # --- Step 2: Code generation (Codex) ---
-        if "codex" in routing and plan.get("codex_prompt") and self._codex:
+        # --- Step 2: Code generation (Codex, with Claude fallback) ---
+        if "codex" in routing and plan.get("codex_prompt"):
             ctx = plan.get("context_for_codex", "")
             if gemini_result:
                 ctx = f"{ctx}\n\nResearch context from Gemini:\n{gemini_result.text}".strip()
-            codex_result = self._codex.generate(plan["codex_prompt"], context=ctx)
+            if self._codex:
+                try:
+                    codex_result = self._codex.generate(plan["codex_prompt"], context=ctx)
+                except Exception as exc:
+                    print(f"[warn] Codex unavailable ({exc}), falling back to Claude for code generation.")
+                    codex_result = self._claude_codegen(plan["codex_prompt"], context=ctx)
+            else:
+                print("[info] No OpenAI key — using Claude for code generation.")
+                codex_result = self._claude_codegen(plan["codex_prompt"], context=ctx)
 
         # --- Step 3: Code review (Gemini) if code was produced ---
-        if codex_result and task_type in (TaskType.CODE, TaskType.HYBRID):
-            gemini_result = self._gemini.review(
-                code=codex_result.code,
-                task_description=plan.get("codex_prompt", user_task),
-            )
+        if codex_result and gemini_available and task_type in (TaskType.CODE, TaskType.HYBRID):
+            try:
+                gemini_result = self._gemini.review(
+                    code=codex_result.code,
+                    task_description=plan.get("codex_prompt", user_task),
+                )
+            except Exception as exc:
+                print(f"[warn] Gemini review skipped: {exc}")
+                gemini_available = False
 
             # --- Step 4: Fix loop if Gemini says "fail" ---
             loops = 0
             while (
-                gemini_result.verdict == "fail"
+                gemini_available
+                and gemini_result
+                and gemini_result.verdict == "fail"
                 and loops < self.max_fix_loops
                 and self._codex
             ):
@@ -234,10 +266,14 @@ class ClaudeOrchestrator:
                     f"Original code:\n{codex_result.code}"
                 )
                 codex_result = self._codex.generate(fix_prompt)
-                gemini_result = self._gemini.review(
-                    code=codex_result.code,
-                    task_description=plan.get("codex_prompt", user_task),
-                )
+                try:
+                    gemini_result = self._gemini.review(
+                        code=codex_result.code,
+                        task_description=plan.get("codex_prompt", user_task),
+                    )
+                except Exception as exc:
+                    print(f"[warn] Gemini fix-loop review skipped: {exc}")
+                    break
                 loops += 1
 
         # --- Step 5: Claude synthesizes everything ---
