@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "llamaindex": {
+      "source": "davila7/claude-code-templates",
+      "sourceType": "github",
+      "skillPath": "cli-tool/components/skills/ai-research/agents-llamaindex/SKILL.md",
+      "computedHash": "49e9ae0a9911170deb9f62e90968bd4318100f6c903d68545e1876794ac341af"
+    }
+  }
+}
