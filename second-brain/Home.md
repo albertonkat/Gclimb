@@ -26,10 +26,11 @@ Drop anything new into [[00-Inbox/Inbox|Inbox]] first.
 
 | | |
 |---|---|
-| 🧠 [[MEMORY\|MEMORY.md]] | Shared persistent memory — Claude + Hermes |
+| 🧠 [[MEMORY\|MEMORY.md]] | Shared persistent memory — Claude Code, Claude.ai + Hermes |
 | 📝 [[06-Sessions/README\|Sessions]] | Agent session summaries (one per conversation) |
 | 💡 [[08-Insights/README\|Insights]] | Distilled knowledge from session clusters |
 | 🗺️ [[03-Resources/agent-guide\|Agent Guide]] | Navigation map for all agents |
+| 🔗 [[03-Resources/claude-ai-integration\|Claude.ai Integration]] | Projects, memory, and history sync |
 
 ---
 

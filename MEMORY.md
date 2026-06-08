@@ -19,6 +19,8 @@
 - [2026-06-08] [claude] User runs Hermes (NousResearch/hermes-agent, 185k stars) as their primary agent alongside Claude/ruflo
 - [2026-06-08] [claude] Ruflo (ruvnet/ruflo) is the Claude Code agent orchestration harness — multi-agent swarms, HNSW memory, IoT plugin (requires Cognitum Seed hardware)
 - [2026-06-08] [claude] Hermes stores its own memory in ~/.hermes/MEMORY.md by default — this file replaces that for shared memory
+- [2026-06-08] [claude] Claude.ai Projects (web app) should be set up with MEMORY.md + key vault files uploaded as knowledge; session summaries exported back to 06-Sessions/
+- [2026-06-08] [claude] Claude.ai Memory (built-in auto-memory) can be exported via Settings → Data & Privacy → Export data → memories.json and merged into this file
 
 ## Second Brain
 - [2026-06-08] [claude] Obsidian vault lives at second-brain/ in this repo — PARA structure (Inbox, Projects, Areas, Resources, Archive, Templates, MOCs)

@@ -19,6 +19,7 @@ tags: [moc, resources]
 
 ## Agent Infrastructure
 - [[03-Resources/ruflo]] — Claude Code agent orchestration platform
+- [[03-Resources/claude-ai-integration]] — Claude.ai Projects, memory, and chat history sync
 - [[03-Resources/hermes-config]] — Hermes memory + MCP configuration
 - [[03-Resources/brain-integration-setup]] — obsidian-brain plugin + RuVector MCP server
 - [[03-Resources/agent-guide]] — master navigation guide for all agents

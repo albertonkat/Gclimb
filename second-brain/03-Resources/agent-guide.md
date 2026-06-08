@@ -22,6 +22,7 @@ Master reference for Claude (ruflo) and Hermes. Read this when you need to find,
 | Zigbee healthcare devices list | `[[03-Resources/Zigbee Healthcare Devices]]` |
 | SmartThings platform reference | `[[03-Resources/SmartThings Platform]]` |
 | ruflo agent reference | `[[03-Resources/ruflo]]` |
+| Claude.ai Projects + memory setup | `[[03-Resources/claude-ai-integration]]` |
 | Hermes config & shared memory setup | `[[03-Resources/hermes-config]]` |
 | obsidian-brain + MCP setup | `[[03-Resources/brain-integration-setup]]` |
 | Past session summaries | `[[06-Sessions/]]` |
@@ -88,9 +89,15 @@ Always use `brain_search` before creating a new note. If something close exists,
 - [YYYY-MM-DD] [agent] learning or fact — source/context
 ```
 
+Agent tags:
+- `[claude]` — written by Claude Code (this tool)
+- `[claude-ai]` — written from a Claude.ai Projects or web session
+- `[claude-ai-memory]` — imported from Claude.ai's built-in memory export
+- `[hermes]` — written by Hermes
+
 Sections in the file:
 - `## Project` — Gclimb repo context
-- `## Agent Stack` — ruflo, Hermes, MCP config
+- `## Agent Stack` — ruflo, Hermes, Claude.ai, MCP config
 - `## Second Brain` — vault structure notes
 - `## Protocols & Standards` — HL7 FHIR, IEEE 11073, Z-Wave, Zigbee
 - `## Device Handlers` — specific devices, fingerprints, quirks
