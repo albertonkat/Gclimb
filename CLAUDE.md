@@ -1,85 +1,100 @@
 # Gclimb — Healthcare IoT Hub
 
-## Memory (MANDATORY)
+## Memory (MANDATORY — do this before anything else)
 
-**At the start of every session:** Read `MEMORY.md` in full before doing anything else.
+**Session start:**
+1. Read `MEMORY.md` in full
+2. Read the last 3 files in `second-brain/06-Sessions/` (sort by filename, most recent first)
+3. If the task involves a domain topic (Z-Wave, Zigbee, FHIR, SmartThings), search the brain: `brain_search "<topic>"`
 
-**During and after every session:** When you learn something new — a fact about the codebase, a device quirk, a decision made, a useful pattern — append it to `MEMORY.md` immediately:
+**During the session:**
+When you discover something worth keeping — a device quirk, a decision, a pattern, a fact — append it to `MEMORY.md` immediately:
 ```
 - [YYYY-MM-DD] [claude] what you learned — context
 ```
 
-Never delete entries from `MEMORY.md`. It is append-only and shared with Hermes.
-This is the single source of truth for persistent memory across both agents.
+**Session end (mandatory):**
+Write a session summary to `second-brain/06-Sessions/YYYY-MM-DD-claude-[topic-slug].md` using the template at `second-brain/05-Templates/session-capture.md`.
+
+**Rules:**
+- Never delete entries from `MEMORY.md`. It is append-only.
+- Always search the brain before writing a new note — avoid duplicates.
+- Both Claude and Hermes read this file. It is the single source of truth.
+
+---
 
 ## Project
-SmartThings Groovy device handlers and SmartApps for healthcare IoT devices (vital signs, glucose monitors, fall detectors, sleep trackers, medication dispensers). Targeting HL7 FHIR, IEEE 11073, and Continua Health Alliance standards.
+
+SmartThings Groovy device handlers and SmartApps for healthcare IoT devices: vital signs, glucose monitors, fall detectors, sleep trackers, medication dispensers. Targeting HL7 FHIR, IEEE 11073, and Continua Health Alliance standards.
+
+---
 
 ## Second Brain (Obsidian vault at `second-brain/`)
 
-### Structure (PARA)
+### Navigation
+
+See `second-brain/03-Resources/agent-guide.md` for the complete navigation map. Quick reference:
+
+| What | Where |
+|---|---|
+| Project tasks and status | `01-Projects/gclimb - Healthcare IoT Hub.md` |
+| Healthcare IoT overview | `02-Areas/Healthcare-IoT/Overview.md` |
+| Z-Wave protocol reference | `03-Resources/Z-Wave Protocol.md` |
+| Zigbee protocol reference | `03-Resources/Zigbee Protocol.md` |
+| Z-Wave healthcare devices | `03-Resources/Z-Wave Healthcare Devices.md` |
+| Zigbee healthcare devices | `03-Resources/Zigbee Healthcare Devices.md` |
+| Agent session summaries | `06-Sessions/` |
+| Distilled insights | `08-Insights/` |
+
+### PARA Structure
 ```
 second-brain/
-  00-Inbox/       ← dump raw captures and agent memories here first
+  00-Inbox/       ← raw captures and agent memories
   01-Projects/    ← active work with a deadline
-  02-Areas/       ← ongoing responsibilities (Healthcare-IoT, SmartThings-Dev)
-  03-Resources/   ← reference material (protocols, platforms, tools)
+  02-Areas/       ← ongoing responsibilities
+  03-Resources/   ← reference material
   04-Archive/     ← completed / paused
   05-Templates/   ← reusable note templates
   06-Daily-Notes/ ← daily captures
+  06-Sessions/    ← agent session summaries (one per conversation)
   07-MOCs/        ← maps of content (index notes)
+  08-Insights/    ← distilled knowledge from session clusters
 ```
 
-### How to read the vault
-The vault is indexed by the RuVector Brain MCP server (see MCP config below).
-Use the `brain_search` or `brain_query` MCP tools to find relevant notes semantically before writing new content — this avoids duplication.
-
 ### How to write memories back
-When you learn something, complete a task, or want to persist knowledge:
 
-1. **Create a file** in `second-brain/00-Inbox/` named:
-   `YYYY-MM-DD-[agent]-[slug].md`
-   e.g. `2026-06-08-claude-smartthings-zwave-fingerprint-notes.md`
+1. **Persistent learning** → append to `MEMORY.md`
+2. **Session summary** → write to `06-Sessions/YYYY-MM-DD-claude-[slug].md`
+3. **New reference doc** → write to `03-Resources/[name].md`
+4. **Device handler notes** → write to `02-Areas/SmartThings-Dev/`
+5. **Inbox capture** → write to `00-Inbox/YYYY-MM-DD-claude-[slug].md`
 
-2. **Use this frontmatter**:
-   ```yaml
-   ---
-   created: YYYY-MM-DD
-   agent: claude  # or: hermes
-   tags: [memory, agent-generated, <relevant-topic>]
-   project: "[[01-Projects/gclimb - Healthcare IoT Hub]]"
-   ---
-   ```
+Always use frontmatter:
+```yaml
+---
+created: YYYY-MM-DD
+agent: claude
+tags: [memory, agent-generated, <topic>]
+confidence: high
+---
+```
 
-3. **Use wikilinks** to cross-reference existing notes:
-   `[[03-Resources/Z-Wave Protocol]]`, `[[02-Areas/Healthcare-IoT/Overview]]`, etc.
-
-4. If the content clearly belongs in a specific folder (e.g. a new resource note), write it there directly instead of the inbox.
-
-### Existing key notes
-- `[[01-Projects/gclimb - Healthcare IoT Hub]]` — project tasks and status
-- `[[02-Areas/Healthcare-IoT/Overview]]` — device categories, standards
-- `[[02-Areas/SmartThings-Dev/Overview]]` — active repos, recurring tasks
-- `[[03-Resources/SmartThings Platform]]` — platform reference
-- `[[03-Resources/Z-Wave Protocol]]` — Z-Wave reference
-- `[[03-Resources/Zigbee Protocol]]` — Zigbee reference
-- `[[03-Resources/ruflo.md]]` — ruflo agent orchestration platform
-
-## MCP: RuVector Brain
-The second-brain is exposed as an MCP server via the obsidian-brain plugin.
+### MCP: RuVector Brain
 Endpoint: `http://127.0.0.1:9876/sse` (local only — runs on the user's machine).
 
-Available tools (once connected):
+Tools:
 - `brain_search` — semantic search across the vault
 - `brain_query` — Q&A grounded in vault contents
 - `brain_store` — write a memory into the brain index
 
-**Always search the brain before writing a new note** to avoid duplicates.
+Always run `brain_search` before writing a new note.
+
+---
 
 ## Codebase layout
 ```
 /                   ← repo root (Groovy device handlers go here, flat structure)
-second-brain/       ← Obsidian knowledge vault (this document lives here conceptually)
+second-brain/       ← Obsidian knowledge vault
 scripts/            ← setup and utility scripts
 hermes/             ← Hermes agent config snippets
 ```

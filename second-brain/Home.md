@@ -2,7 +2,7 @@
 tags: [home, dashboard]
 ---
 
-# 🧠 Second Brain
+# Second Brain
 
 > *"Your mind is for having ideas, not holding them."* — David Allen
 
@@ -19,6 +19,17 @@ Drop anything new into [[00-Inbox/Inbox|Inbox]] first.
 | 🌐 [[07-MOCs/Areas MOC\|Areas]] | Ongoing responsibilities |
 | 📚 [[07-MOCs/Resources MOC\|Resources]] | Reference material |
 | 🗄️ 04-Archive | Inactive, completed, or paused |
+
+---
+
+## Agent Memory
+
+| | |
+|---|---|
+| 🧠 [[MEMORY\|MEMORY.md]] | Shared persistent memory — Claude + Hermes |
+| 📝 [[06-Sessions/README\|Sessions]] | Agent session summaries (one per conversation) |
+| 💡 [[08-Insights/README\|Insights]] | Distilled knowledge from session clusters |
+| 🗺️ [[03-Resources/agent-guide\|Agent Guide]] | Navigation map for all agents |
 
 ---
 
@@ -48,3 +59,4 @@ Install these from Obsidian → Settings → Community Plugins:
 | **Periodic Notes** | Weekly/monthly reviews |
 | **Tasks** | Track tasks across all notes |
 | **Obsidian Git** | Auto-sync vault to GitHub |
+| **RuVector Brain** | Semantic search for Claude + Hermes MCP |
