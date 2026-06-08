@@ -1,5 +1,17 @@
 # Gclimb — Healthcare IoT Hub
 
+## Memory (MANDATORY)
+
+**At the start of every session:** Read `MEMORY.md` in full before doing anything else.
+
+**During and after every session:** When you learn something new — a fact about the codebase, a device quirk, a decision made, a useful pattern — append it to `MEMORY.md` immediately:
+```
+- [YYYY-MM-DD] [claude] what you learned — context
+```
+
+Never delete entries from `MEMORY.md`. It is append-only and shared with Hermes.
+This is the single source of truth for persistent memory across both agents.
+
 ## Project
 SmartThings Groovy device handlers and SmartApps for healthcare IoT devices (vital signs, glucose monitors, fall detectors, sleep trackers, medication dispensers). Targeting HL7 FHIR, IEEE 11073, and Continua Health Alliance standards.
 

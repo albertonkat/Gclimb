@@ -1,50 +1,47 @@
 ---
 created: 2026-06-08
-tags: [setup, hermes, config]
+tags: [setup, hermes, config, memory]
 ---
 
-# Hermes Config — Brain Integration
+# Hermes Config — Shared Memory
 
-Hermes config snippets for connecting to the RuVector Brain and writing memories to this vault.
+Point Hermes at the shared `MEMORY.md` so it reads and writes the same memory as Claude/ruflo.
 
-## MCP connection
+## Step 1 — Set memory file path
 
-Run once:
-```bash
-hermes mcp add ruvector-brain --url http://127.0.0.1:9876/sse
-```
-
-Or add to `~/.hermes/config.yaml`:
+In `~/.hermes/config.yaml`, add:
 ```yaml
-mcp:
-  servers:
-    ruvector-brain:
-      url: http://127.0.0.1:9876/sse
-      type: sse
-      description: "Gclimb second-brain vault"
+memory:
+  file: /path/to/your/Gclimb/MEMORY.md
 ```
 
-## Context file
+Replace `/path/to/your/Gclimb/` with the actual path where you cloned the repo.
 
-Create `~/.hermes/context/gclimb.md` so Hermes knows about the project:
+Or set via CLI:
+```bash
+hermes config set memory.file /path/to/your/Gclimb/MEMORY.md
+```
 
+## Step 2 — Create a context file for the project
+
+Create `~/.hermes/context/gclimb.md`:
 ```markdown
-# Gclimb project context
+# Gclimb context
 
-Working on: SmartThings Groovy device handlers for healthcare IoT.
-Devices: vital sign monitors, glucose monitors, fall detectors, sleep trackers, medication dispensers.
-Standards: HL7 FHIR, IEEE 11073, Continua Health Alliance.
-Repo: https://github.com/albertonkat/Gclimb
+SmartThings Groovy device handlers for healthcare IoT.
+Repo: /path/to/your/Gclimb/
+
+## Memory (MANDATORY)
+At the start of every session, read MEMORY.md at the repo root in full.
+When you learn something new, append it immediately:
+  - [YYYY-MM-DD] [hermes] what you learned — context
+Never delete entries. This file is shared with Claude — it is the single source of truth.
 
 ## Second brain
-My knowledge vault is at: [path to your local Obsidian vault]/second-brain/
-The vault is synced to the Gclimb GitHub repo.
-When you learn something relevant, write it to second-brain/00-Inbox/ following the agent memory protocol in 00-Inbox/agent-memory-protocol.md.
+Obsidian vault is at: /path/to/your/Gclimb/second-brain/
+PARA structure: 00-Inbox, 01-Projects, 02-Areas, 03-Resources, 04-Archive
 
-## Memory write path
-second-brain/00-Inbox/YYYY-MM-DD-hermes-[slug].md
-
-## Key notes to know about
+## Key notes
 - second-brain/01-Projects/gclimb - Healthcare IoT Hub.md
 - second-brain/02-Areas/Healthcare-IoT/Overview.md
 - second-brain/03-Resources/Z-Wave Protocol.md
@@ -52,37 +49,40 @@ second-brain/00-Inbox/YYYY-MM-DD-hermes-[slug].md
 ```
 
 Activate in a session:
-```
+```bash
+hermes
 /context gclimb
 ```
 
-Or set as default in `~/.hermes/config.yaml`:
+Or set as default so it loads every time:
 ```yaml
 context:
   default_files:
     - ~/.hermes/context/gclimb.md
 ```
 
-## Skill for memory write-back
+## Step 3 — Create a save-memory skill
 
-Create `~/.hermes/skills/save-to-second-brain.md`:
-
+Create `~/.hermes/skills/remember.md`:
 ```markdown
 ---
-name: save-to-second-brain
-description: Save the current learning or insight as a memory in the Gclimb second-brain vault
+name: remember
+description: Append a new learning to the shared MEMORY.md
 ---
 
-Write a memory note to the second-brain following this protocol:
+Append this to /path/to/your/Gclimb/MEMORY.md:
+- [{{date}}] [hermes] {{learning}} — {{context}}
 
-1. File: [vault path]/second-brain/00-Inbox/{{date}}-hermes-{{slug}}.md
-2. Frontmatter: created, agent: hermes, tags: [memory, agent-generated, <topic>], confidence
-3. Sections: Context, Learning, Cross-references, Source
-4. Use wikilinks to existing notes where relevant
-5. Search brain_search first to avoid duplicates
+Read the file first to avoid duplicating something already there.
 ```
 
-Invoke with:
+Use it during a session:
 ```
-/save-to-second-brain
+/remember Z-Wave fingerprint format uses 0x0104 for HA profile — discovered while writing device handler
 ```
+
+## How it works with Claude
+
+Both agents read the same `MEMORY.md` file. When Hermes learns something and appends it, Claude sees it on the next session start (because CLAUDE.md instructs Claude to read MEMORY.md first). Vice versa.
+
+Nothing is lost between sessions. Nothing is siloed per agent.
