@@ -1,106 +1,129 @@
 ---
-created: 2026-06-08
+created: 2026-06-09
 tags: [meta, agent-guide, navigation]
 ---
 
-# Agent Navigation Guide
+# Agent Navigation Guide — Gulf Coast Limb and Brace
 
-Master reference for Claude (ruflo) and Hermes. Read this when you need to find, write, or route anything in this second brain.
+Master reference for Claude Code. Read this when you need to find, write, or route anything.
 
 ---
 
-## Where to find things
+## PHI Rule — Read This First
 
-| What you're looking for | Where to look |
+**PHI = any patient-identifiable data: names, DOB, insurance IDs, diagnoses tied to a specific person.**
+
+| Content type | Where it goes |
 |---|---|
-| Project status, open tasks | `[[01-Projects/gclimb - Healthcare IoT Hub]]` |
-| Healthcare IoT overview, device categories | `[[02-Areas/Healthcare-IoT/Overview]]` |
-| SmartThings dev context, active repos | `[[02-Areas/SmartThings-Dev/Overview]]` |
-| Z-Wave protocol reference | `[[03-Resources/Z-Wave Protocol]]` |
-| Zigbee protocol reference | `[[03-Resources/Zigbee Protocol]]` |
-| Z-Wave healthcare devices list | `[[03-Resources/Z-Wave Healthcare Devices]]` |
-| Zigbee healthcare devices list | `[[03-Resources/Zigbee Healthcare Devices]]` |
-| SmartThings platform reference | `[[03-Resources/SmartThings Platform]]` |
-| ruflo agent reference | `[[03-Resources/ruflo]]` |
-| Claude.ai Projects + memory setup | `[[03-Resources/claude-ai-integration]]` |
-| Hermes config & shared memory setup | `[[03-Resources/hermes-config]]` |
-| obsidian-brain + MCP setup | `[[03-Resources/brain-integration-setup]]` |
+| Raw SOAP notes | `~/GulfCoastLimb-PHI/soap-notes/` — LOCAL ONLY |
+| Raw appeal letters | `~/GulfCoastLimb-PHI/appeals/` — LOCAL ONLY |
+| Prior auth requests | `~/GulfCoastLimb-PHI/prior-auth/` — LOCAL ONLY |
+| Patient case files | `~/GulfCoastLimb-PHI/cases/` — LOCAL ONLY |
+| De-identified templates | `second-brain/05-Templates/` — repo OK |
+| De-identified learnings | `MEMORY.md` — repo OK |
+| Clinical/billing reference | `second-brain/03-Resources/` — repo OK |
+| Session summaries (de-identified) | `second-brain/06-Sessions/` — repo OK |
+
+**Never commit anything from `~/GulfCoastLimb-PHI/` to git.**
+
+---
+
+## Where to Find Things
+
+| What | Where |
+|---|---|
+| Practice project + open tasks | `[[01-Projects/Gulf Coast Limb and Brace]]` |
+| Clinical documentation standards | `[[02-Areas/Clinical-Practice/Overview]]` |
+| Insurance + billing knowledge | `[[02-Areas/Insurance-Billing/Overview]]` |
+| Software projects | `[[02-Areas/Software-Dev/Overview]]` |
+| Business operations | `[[02-Areas/Business-Operations/Overview]]` |
+| HCPCS L-code reference | `[[03-Resources/HCPCS L-Codes]]` |
+| ICD-10 diagnosis codes | `[[03-Resources/ICD-10 O&P Codes]]` |
+| Medicare LCD coverage rules | `[[03-Resources/Medicare LCD Reference]]` |
+| Payer contacts + denial patterns | `[[03-Resources/Insurance Payers]]` |
+| CPO credentials and scope | `[[03-Resources/CPO Scope of Practice]]` |
+| Claude.ai Projects setup | `[[03-Resources/claude-ai-integration]]` |
 | Past session summaries | `[[06-Sessions/]]` |
 | Distilled insights | `[[08-Insights/]]` |
-| All healthcare content | `[[07-MOCs/Healthcare IoT MOC]]` |
-| All resources index | `[[07-MOCs/Resources MOC]]` |
+| Master O&P index | `[[07-MOCs/O&P Practice MOC]]` |
+| Clinical doc index | `[[07-MOCs/Clinical Documentation MOC]]` |
+| Billing/appeals index | `[[07-MOCs/Insurance Billing MOC]]` |
 | Shared persistent memory | `MEMORY.md` (repo root) |
-| How to write agent memories | `[[00-Inbox/agent-memory-protocol]]` |
 
 ---
 
-## Where to write things
+## Where to Write Things
 
 | Content type | Destination |
 |---|---|
-| Quick capture, unsorted | `00-Inbox/` — file as `YYYY-MM-DD-[agent]-[slug].md` |
-| Session summary (end of every session) | `06-Sessions/YYYY-MM-DD-[agent]-[topic].md` |
-| Distilled insight (from 3+ sessions) | `08-Insights/YYYY-MM-DD-[topic].md` |
-| Project update or task status change | Edit `01-Projects/gclimb - Healthcare IoT Hub.md` in place |
-| New protocol or tool reference | `03-Resources/[name].md` |
-| Device handler notes, Groovy patterns | `02-Areas/SmartThings-Dev/` |
-| Healthcare domain knowledge | `02-Areas/Healthcare-IoT/` |
-| Any persistent learning | Append to `MEMORY.md` using format: `- [YYYY-MM-DD] [agent] learning — context` |
+| PHI documents (SOAP, appeals, prior auth) | `~/GulfCoastLimb-PHI/` — never this repo |
+| Session summary (end of every session) | `06-Sessions/YYYY-MM-DD-claude-[topic].md` |
+| De-identified learning | Append to `MEMORY.md` |
+| Distilled insight (3+ sessions on same topic) | `08-Insights/YYYY-MM-DD-[topic].md` |
+| Project status update | Edit `01-Projects/[project].md` in place |
+| New payer rule learned | Append to `03-Resources/Insurance Payers.md` under "Learned Denial Patterns" |
+| New clinical pattern | Append to `MEMORY.md` + optionally to `02-Areas/Clinical-Practice/Overview.md` |
+| New code project | Create `01-Projects/[project-name].md` |
+| Quick capture, unsorted | `00-Inbox/YYYY-MM-DD-claude-[slug].md` |
 
 ---
 
-## Session protocol (mandatory)
+## Session Protocol (Mandatory)
 
-### At the start of every session
+### At session start
 1. Read `MEMORY.md` in full
-2. Read the last 3 files in `06-Sessions/` (sort by filename descending)
-3. Search brain for any topic directly relevant to today's task
+2. Read the last 3 files in `06-Sessions/` (sort by name, most recent first)
+3. If task involves a clinical or billing topic, `brain_search` for it first
 
-### During a session
-- When you discover something worth keeping: append to `MEMORY.md` immediately
-- When you answer a domain question: search brain first (`brain_search`), don't guess
+### During the session
+- Found something worth keeping? → Append to `MEMORY.md` immediately (de-identified)
+- Answering a domain question? → `brain_search` first, don't guess
 
-### At the end of every session
-1. Write a session summary to `06-Sessions/YYYY-MM-DD-[agent]-[topic].md` using the `[[05-Templates/session-capture]]` template
+### At session end
+1. Write de-identified summary to `06-Sessions/YYYY-MM-DD-claude-[topic].md`
+   Use template: `[[05-Templates/session-capture]]`
 2. Append key learnings to `MEMORY.md`
-3. If a topic now has 3+ session notes: consider writing an `[[08-Insights/]]` note
+3. If 3+ sessions now cover the same topic → write an `[[08-Insights/]]` note
 
 ---
 
-## Search before writing
-
-Always use `brain_search` before creating a new note. If something close exists, update or cross-reference it instead of creating a duplicate.
-
----
-
-## Templates available
-
-| Template | Use for |
-|---|---|
-| `[[05-Templates/agent-memory]]` | Structured memory notes in `00-Inbox/` |
-| `[[05-Templates/session-capture]]` | End-of-session summaries in `06-Sessions/` |
-| `[[05-Templates/insight]]` | Distilled insights in `08-Insights/` |
-
----
-
-## MEMORY.md format
+## MEMORY.md Format
 
 ```
 - [YYYY-MM-DD] [agent] learning or fact — source/context
 ```
 
-Agent tags:
-- `[claude]` — written by Claude Code (this tool)
-- `[claude-ai]` — written from a Claude.ai Projects or web session
-- `[claude-ai-memory]` — imported from Claude.ai's built-in memory export
-- `[hermes]` — written by Hermes
+Agent tags: `[claude]` (Claude Code), `[claude-ai]` (Claude.ai web/Projects)
 
-Sections in the file:
-- `## Project` — Gclimb repo context
-- `## Agent Stack` — ruflo, Hermes, Claude.ai, MCP config
-- `## Second Brain` — vault structure notes
-- `## Protocols & Standards` — HL7 FHIR, IEEE 11073, Z-Wave, Zigbee
-- `## Device Handlers` — specific devices, fingerprints, quirks
-- `## SmartThings Platform` — Groovy DSL, API, hub firmware
+Sections: `## Practice`, `## PHI & Compliance`, `## Agent Stack`, `## Clinical — O&P Domain`, `## Insurance & Billing`, `## Clinical Documentation`, `## Software Projects`
 
-Always append to the most relevant section.
+**Always de-identify**: OK to write `"Medicare denied K3 knee without physiatry note"` — NOT OK to write any patient name, DOB, or ID.
+
+---
+
+## PHI Vault Structure (`~/GulfCoastLimb-PHI/`)
+
+```
+~/GulfCoastLimb-PHI/
+  soap-notes/     YYYY-MM-DD-[patientID]-[visit-type].md
+  appeals/        YYYY-MM-DD-[patientID]-[payer]-[code].md
+  prior-auth/     YYYY-MM-DD-[patientID]-[payer].md
+  cases/          [patientID].md  (longitudinal case file)
+```
+
+Patient IDs: use a consistent internal ID (e.g., initials + DOB hash or your EMR number) — never the full name in filenames.
+
+---
+
+## Templates Available
+
+| Template | Use for |
+|---|---|
+| `[[05-Templates/SOAP Note - Lower Extremity Prosthetic]]` | BK/AK/hip disarticulation visits |
+| `[[05-Templates/SOAP Note - AFO Orthotic]]` | AFO/KAFO/KO visits |
+| `[[05-Templates/SOAP Note - Upper Extremity Prosthetic]]` | BE/AE/shoulder disart visits |
+| `[[05-Templates/Insurance Appeal Letter]]` | Any payer appeal |
+| `[[05-Templates/Prior Authorization]]` | Prior auth requests |
+| `[[05-Templates/session-capture]]` | End-of-session summaries |
+| `[[05-Templates/insight]]` | Distilled insights |
+| `[[05-Templates/agent-memory]]` | Inbox memory notes |
