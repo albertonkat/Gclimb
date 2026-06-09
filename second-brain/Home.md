@@ -2,9 +2,11 @@
 tags: [home, dashboard]
 ---
 
-# 🧠 Second Brain
+# Gulf Coast Limb and Brace — Second Brain
 
-> *"Your mind is for having ideas, not holding them."* — David Allen
+**Alberto Alvarez, CPO**
+
+---
 
 ## Quick Capture
 Drop anything new into [[00-Inbox/Inbox|Inbox]] first.
@@ -16,35 +18,47 @@ Drop anything new into [[00-Inbox/Inbox|Inbox]] first.
 | | |
 |---|---|
 | 📁 [[07-MOCs/Projects MOC\|Projects]] | Active work with a deadline |
-| 🌐 [[07-MOCs/Areas MOC\|Areas]] | Ongoing responsibilities |
-| 📚 [[07-MOCs/Resources MOC\|Resources]] | Reference material |
-| 🗄️ 04-Archive | Inactive, completed, or paused |
+| 🌐 [[07-MOCs/Areas MOC\|Areas]] | Clinical practice, billing, business ops |
+| 📚 [[07-MOCs/Resources MOC\|Resources]] | L-codes, ICD-10, LCDs, payer rules |
+| 🗄️ [[04-Archive\|Archive]] | Completed / paused |
 
 ---
 
-## Focus Areas
+## O&P Practice
 
-### Healthcare IoT
-→ [[07-MOCs/Healthcare IoT MOC]]
+| | |
+|---|---|
+| 🏥 [[01-Projects/Gulf Coast Limb and Brace\|Practice Overview]] | Open tasks and project status |
+| 🩺 [[07-MOCs/Clinical Documentation MOC\|Clinical Documentation]] | SOAP notes and templates |
+| 📋 [[07-MOCs/Insurance Billing MOC\|Insurance & Billing]] | Payer rules, appeals, prior auth |
+| 💻 [[07-MOCs/Software Projects MOC\|Software Projects]] | Code projects |
+| 🗺️ [[07-MOCs/O&P Practice MOC\|Master O&P Index]] | All practice knowledge |
 
-### SmartThings Development
-→ [[07-MOCs/SmartThings MOC]]
+---
+
+## Agent Memory
+
+| | |
+|---|---|
+| 🧠 [[MEMORY\|MEMORY.md]] | Shared persistent memory — append-only |
+| 📝 [[06-Sessions/README\|Sessions]] | Agent session summaries (one per conversation) |
+| 💡 [[08-Insights/README\|Insights]] | Distilled knowledge from session clusters |
+| 🗺️ [[03-Resources/agent-guide\|Agent Guide]] | Navigation map and PHI rules |
+| 🔗 [[03-Resources/claude-ai-integration\|Claude.ai Integration]] | Projects and memory sync |
 
 ---
 
 ## Today
-Open today's daily note: [[06-Daily-Notes/{{date:YYYY-MM-DD}}]]
+[[06-Daily-Notes/{{date:YYYY-MM-DD}}]]
 
 ---
 
 ## Recommended Plugins
-Install these from Obsidian → Settings → Community Plugins:
 
 | Plugin | Purpose |
 |---|---|
-| **Templater** | Smarter templates with dynamic dates |
+| **Templater** | Dynamic templates (dates, prompts) |
 | **Dataview** | Query notes like a database |
 | **Calendar** | Visual daily note navigator |
-| **Periodic Notes** | Weekly/monthly reviews |
-| **Tasks** | Track tasks across all notes |
 | **Obsidian Git** | Auto-sync vault to GitHub |
+| **RuVector Brain** | Semantic search for Claude MCP |
